@@ -1,9 +1,14 @@
-import { Button } from "./components/ui/button"
+import { AppSidebar } from "./components/app-sidebar"
+import { SidebarProvider } from "./components/ui/sidebar"
 
 function App() {
   return (
     <div>
-      <Button>hello</Button>
+      <SidebarProvider style={{
+        "--sidebar-width": "290px",
+      } as React.CSSProperties}>
+        <AppSidebar />
+      </SidebarProvider>
     </div>
   )
 }
