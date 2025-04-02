@@ -61,7 +61,7 @@ export function AppSidebar() {
                             {topMenuItems.map((item) => {
                                 return (
                                     <SidebarMenuItem key={item.title}>
-                                        <SidebarMenuButton asChild className="-mx-2 [&>svg]:size-6 text-base font-medium h-10 gap-3">
+                                        <SidebarMenuButton asChild className="-mx-2 w-full [&>svg]:size-6 text-base font-medium h-10 gap-3">
                                             <a href={item.url}>
                                                 <item.icon />
                                                 <span>{item.title}</span>
