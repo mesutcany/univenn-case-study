@@ -7,7 +7,7 @@ export default function TalentPoolPage() {
   const { data, previousData } = useData();
 
   return (
-    <main className="flex-1 px-8 overflow-hidden">
+    <main className="flex-1 px-8 overflow-hidden flex flex-col gap-6 h-screen">
       <div className="flex flex-row pt-8">
         <div className="flex items-center justify-between w-full">
           <div className="flex flex-col gap-2">
@@ -28,12 +28,9 @@ export default function TalentPoolPage() {
         </div>
       </div>
 
-      <hr className="my-6" />
+      <hr />
 
-      <div className="mt-6 overflow-y-auto">
-
-        <TalentPoolTable data={(data || previousData)?.getCompanyApplicantList?.applicants ?? []} />
-      </div>
+      <TalentPoolTable data={(data || previousData)?.getCompanyApplicantList?.applicants ?? []} />
     </main>
   )
 }

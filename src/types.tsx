@@ -1,3 +1,11 @@
+export type QueryResponse = {
+    getCompanyApplicantList: {
+        applicants: Applicant[],
+        total: number,
+        pages: number,
+    }
+}
+
 export type Applicant = {
     id: string;
     firstName: string;

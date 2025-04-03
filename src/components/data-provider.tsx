@@ -1,42 +1,59 @@
 import { ApolloError, useQuery } from "@apollo/client";
-import React, { createContext, useContext, useState } from "react";
+import React, { createContext, useContext, useRef, useState } from "react";
 import { GET_COMPANY_APPLICANT_LIST } from "../queries";
+import { QueryResponse } from "../types";
 
 const DataContext = createContext<{
     query: string;
     setQuery: (query: string) => void
     page: number;
     setPage: (page: number) => void
-    data: any;
+    data: QueryResponse;
     loading: boolean;
     error: ApolloError | undefined;
-    previousData: any;
-    sort: { key: string; value: string };
-    setSort: (sort: { key: string; value: string }) => void
+    previousData: QueryResponse;
+    search: (query: string) => void,
+    sort: (key: string, value: string) => void
+    getNextPage: () => void
 }>({
     query: "",
     setQuery() { },
     page: 1,
     setPage() { },
-    sort: "createdAt",
-    setSort() { },
-    data: null,
+    data: {
+        getCompanyApplicantList: {
+            applicants: [],
+            pages: 0,
+            total: 0
+        }
+    },
     loading: true,
-    previousData: null,
+    previousData: {
+        getCompanyApplicantList: {
+            applicants: [],
+            pages: 0,
+            total: 0
+        }
+    },
     error: undefined,
+    search: (query: string) => {
+        console.log(query)
+    },
+    sort: (key: string, value: string) => {
+        console.log(key, value)
+    },
+    getNextPage: () => { }
 })
 
 export default function DataProvider({ children }: React.PropsWithChildren<object>) {
     const [query, setQuery] = useState("");
     const [page, setPage] = useState(1);
-    const [sort, setSort] = useState({
-        key: "createdAt",
-        value: "desc"
-    });
+    const pageRef = useRef(1);
 
-    const { data, loading, error, previousData } = useQuery(GET_COMPANY_APPLICANT_LIST, {
+    const { data, loading, error, previousData, fetchMore, refetch } = useQuery(GET_COMPANY_APPLICANT_LIST, {
+        notifyOnNetworkStatusChange: true,
         variables: {
-            "page": page,
+            "page": "1",
             "pageSize": 18,
             "filter": {
                 "filterParameters": [
@@ -47,24 +64,59 @@ export default function DataProvider({ children }: React.PropsWithChildren<objec
                         "logicalOperator": "AND"
                     }
                 ],
-                "query": query,
+                "query": "",
                 "isFavoriteApplicant": false,
                 "jobListingId": null
             },
-            "sort": {
-                [sort.key]: sort.value
-            }
+            "sort": { "createdAt": "desc" }
         },
         context: {
             headers: {
                 authorization: "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6ImNsbnZvcTZzYjAwNmQzd21xZHJhNmIxZDIiLCJpYXQiOjE3NDM0OTgzODcsImV4cCI6MTc3NTA1NTk4N30.mtg56U54FxHozIAAfEkP2peFnZIzegV0hwjV2f7L0uk"
             },
-        }
+        },
     });
+
+    function search(query: string) {
+        pageRef.current = 1;
+        refetch({
+            page: pageRef.current,
+            filter: {
+                query
+            }
+        })
+    }
+
+    function sort(key: string, value: string) {
+        pageRef.current = 1
+        refetch({
+            page: pageRef.current,
+            sort: {
+                [key]: value
+            }
+        })
+    }
+
+    function getNextPage() {
+        pageRef.current++;
+        fetchMore({
+            variables: {
+                page: pageRef.current
+            },
+            updateQuery(previousData, { fetchMoreResult }) {
+                return {
+                    getCompanyApplicantList: {
+                        ...fetchMoreResult.getCompanyApplicantList,
+                        applicants: previousData.getCompanyApplicantList.applicants.concat(fetchMoreResult.getCompanyApplicantList.applicants)
+                    }
+                }
+            }
+        })
+    }
 
     return (
         <DataContext.Provider value={{
-            data, loading, error, query, setQuery, page, setPage, previousData, sort, setSort
+            data, loading, error, query, setQuery, page, setPage, previousData, search, sort, getNextPage
         }}>
             {children}
         </DataContext.Provider>

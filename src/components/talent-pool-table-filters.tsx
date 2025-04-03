@@ -3,81 +3,56 @@ import { Input } from "./ui/input"
 import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover"
 import { Button } from "./ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select"
-import { Table } from "@tanstack/react-table"
+import { SortingState, Table } from "@tanstack/react-table"
 import { Applicant } from "../types"
 import { Label } from "./ui/label"
 import { Switch } from "./ui/switch"
 import { useData } from "./data-provider"
+import { useEffect, useState } from "react"
 
 type TalentPoolTableFiltersProps = {
-    table: Table<Applicant>
+    table: Table<Applicant>,
+    sorting: SortingState,
+    setSorting: React.Dispatch<React.SetStateAction<SortingState>>
 }
 
-const sorters = [
-    {
-        "label": "Aşama",
-        "key": "stage",
-        "type": "string"
+const sortingTextsByType = {
+    string: {
+        low: "A to Z",
+        high: "Z to A"
     },
-    {
-        "label": "AI Puanı",
-        "key": "aiFit",
-        "type": "number"
+    number: {
+        low: " Low to High",
+        high: "High to Low"
     },
-    {
-        "label": "Kaynak",
-        "key": "sourceType",
-        "type": "string",
-    },
-    {
-        "label": "Değerlendirme",
-        "key": "avgRating",
-        "type": "number"
-    },
-    {
-        "label": "Eklenme Tarihi",
-        "key": "createdAt",
-        "type": "date"
-    },
-    {
-        "label": "Maaş Beklentisi",
-        "key": "salaryExp",
-        "type": "number"
-    },
-    {
-        "label": "Telefon",
-        "key": "phoneNumber",
-        "type": "string"
-    },
-    {
-        "label": "Son Güncelleme",
-        "key": "updatedAt",
-        "type": "string"
-    },
-    {
-        "label": "Yaş",
-        "key": "dateOfBirth",
-        "type": "number"
-    },
-    {
-        "label": "Cinsiyet",
-        "key": "gender",
-        "type": "string"
-    },
-    {
-        "label": "Mezun Olduğu Okul",
-        "key": "university",
-        "type": "string"
+    date: {
+        low: "From Newest",
+        high: "From Oldest"
     }
-];
+}
 
-export default function TalentPoolTableFilters({ table }: TalentPoolTableFiltersProps) {
-    const { setQuery, query, sort, setSort } = useData();
+export default function TalentPoolTableFilters({ table, setSorting }: TalentPoolTableFiltersProps) {
+    const { search } = useData();
+    const [query, setQuery] = useState("");
+    const sorters = table.getState().sorting;
+    const currentSortingColumn = table.getFlatHeaders().find(header => {
+        return header.column.columnDef.id === sorters[0].id
+    });
+    const lowHighTexts = sortingTextsByType[currentSortingColumn?.column.columnDef.meta.type || "string"];
 
-    const sortType = sorters.find(sorter => sorter.key === sort.key)?.type;
+    useEffect(() => {
+        const timeoutId = setTimeout(() => {
+            search(query);
+        }, 300);
+
+        return () => {
+            clearTimeout(timeoutId);
+        }
+    }, [query])
+
 
     return (
-        <div className="flex gap-3 justify-end flex-wrap mt-6">
+        <div className="flex gap-3 justify-end flex-wrap">
             <div>
                 <form>
                     <div className="relative">
@@ -97,76 +72,50 @@ export default function TalentPoolTableFilters({ table }: TalentPoolTableFilters
                     </PopoverTrigger>
                     <PopoverContent align="start" className="w-auto">
                         <div className="flex gap-4">
-                            <Select value={sort.key} onValueChange={(value) => {
-                                setSort({
-                                    key: value,
-                                    value: sort.key === value ? sort.value : "desc",
-                                })
+                            <Select value={sorters[0].id} onValueChange={value => {
+                                setSorting((prevSorting) => prevSorting.map(sorting => {
+                                    return {
+                                        id: value,
+                                        desc: sorting.id === value ? !sorting.desc : false
+                                    }
+                                }))
                             }}>
                                 <SelectTrigger className="bg-gray-200 text-gray-900! [&>svg]:text-gray-900! [&>svg]:opacity-100!">
-                                    <SelectValue placeholder="Date Added" />
+                                    <SelectValue />
                                 </SelectTrigger>
 
                                 <SelectContent>
-                                    {sorters.map(sorter => {
-                                        return (
-                                            <SelectItem value={sorter.key}>
-                                                {sorter.label}
-                                            </SelectItem>
-                                        )
-                                    })}
+                                    {table.getHeaderGroups().map((headerGroup) => (
+                                        headerGroup.headers
+                                            .filter(header => header.column.columnDef.enableSorting !== false)
+                                            .map(header => (
+                                                <SelectItem value={header.column.columnDef.id?.toString() ?? ""} data-id={header.column.columnDef.id?.toString()}>
+                                                    {header.column.columnDef.header?.toString()} {header.column.columnDef.id?.toString()}
+                                                </SelectItem>
+                                            ))
+                                    ))}
                                 </SelectContent>
                             </Select>
 
-                            <Select value={sort.value} onValueChange={(value) => {
-                                setSort({
-                                    ...sort,
-                                    value
-                                })
+                            <Select value={sorters[0].desc ? "desc" : "asc"} onValueChange={(value) => {
+                                setSorting((prevSorting) => prevSorting.map(sorting => {
+                                    return {
+                                        id: sorting.id,
+                                        desc: value === "desc"
+                                    }
+                                }))
                             }}>
                                 <SelectTrigger className="bg-gray-200 text-gray-900! [&>svg]:text-gray-900! [&>svg]:opacity-100!">
                                     <SelectValue placeholder="Date Added" />
                                 </SelectTrigger>
 
                                 <SelectContent>
-                                    {
-                                        sortType === "string" &&
-                                        (
-                                            <>
-                                                <SelectItem value="desc">
-                                                    A to Z
-                                                </SelectItem>
-                                                <SelectItem value="asc">
-                                                    Z to A
-                                                </SelectItem>
-                                            </>
-                                        )
-                                    }
-                                    {
-                                        sortType === "number" && (
-                                            <>
-                                                <SelectItem value="desc">
-                                                    Low to High
-                                                </SelectItem>
-                                                <SelectItem value="asc">
-                                                    Hight to Low
-                                                </SelectItem>
-                                            </>
-                                        )
-                                    }
-                                    {
-                                        sortType === "date" && (
-                                            <>
-                                                <SelectItem value="desc">
-                                                    From Newest
-                                                </SelectItem>
-                                                <SelectItem value="asc">
-                                                    From Oldest
-                                                </SelectItem>
-                                            </>
-                                        )
-                                    }
-
+                                    <SelectItem value="asc">
+                                        {lowHighTexts.low}
+                                    </SelectItem>
+                                    <SelectItem value="desc">
+                                        {lowHighTexts.high}
+                                    </SelectItem>
                                 </SelectContent>
                             </Select>
                         </div>

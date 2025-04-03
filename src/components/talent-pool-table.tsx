@@ -1,16 +1,15 @@
-import { useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import {
     type ColumnDef,
     flexRender,
     getCoreRowModel,
-    getSortedRowModel,
     type SortingState,
     getPaginationRowModel,
     useReactTable,
     ColumnFiltersState,
     getFilteredRowModel,
 } from "@tanstack/react-table"
-import { MoreVertical, ChevronDown, Star, ChevronUp } from "lucide-react"
+import { MoreVertical, Star, ArrowDown, ArrowUp } from "lucide-react"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "./ui/table"
 import { Checkbox } from "./ui/checkbox"
 import { Button } from "./ui/button"
@@ -19,8 +18,9 @@ import { Applicant } from "../types"
 import TalentPoolTableFilters from "./talent-pool-table-filters"
 import pdfIcon from "../../src/assets/Pdf.png"
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar"
-import { useData } from "./data-provider"
-
+import { useData } from "./data-provider";
+import { Badge } from "./ui/badge";
+import { formatDate } from "../lib/utils"
 
 const stages = {
     "Sourced": "#808080",
@@ -38,45 +38,39 @@ type TalentTableProps = {
 }
 
 export default function TalentTable({ data }: TalentTableProps) {
-    const { sort, setSort } = useData();
-    const [sorting, setSorting] = useState<SortingState>();
+    const { sort, loading, getNextPage } = useData();
+    const [sorting, setSorting] = useState<SortingState>([{ id: "aiFit", desc: true }]);
     const [columnVisibility, setColumnVisibility] = useState({ Phone: false, "Last Action": false });
     const [rowSelection, setRowSelection] = useState({});
-    const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([])
+    const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
+    const elRef = useRef<HTMLElement>(null);
 
     const columns: ColumnDef<Applicant>[] = [
         {
-            id: "select",
-            header: ({ table }) => (
-                <Checkbox
-                    checked={table.getIsAllPageRowsSelected() || (table.getIsSomePageRowsSelected() && "indeterminate")}
-                    onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
-                    aria-label="Select all"
-                />
-            ),
-            cell: ({ row }) => (
-                <TableCell className="py-3">
-                    <Checkbox
-                        checked={row.getIsSelected()}
-                        onCheckedChange={(value) => row.toggleSelected(!!value)}
-                        aria-label="Select row"
-                    />
-                </TableCell>
-            ),
-            enableSorting: false,
-            enableHiding: false
-        },
-        {
             id: "fullName",
             accessorFn: (row) => row.firstName + " " + row.lastName,
-            header: "Name",
-            enableHiding: false,
+            header: ({ table }) => (
+                <div className="flex items-center gap-2">
+                    <Checkbox
+                        checked={table.getIsAllPageRowsSelected() || (table.getIsSomePageRowsSelected() && "indeterminate")}
+                        onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
+                        aria-label="Select all"
+                    />
+                    <span>Name</span>
+                </div>
+            ),
             cell: ({ row }) => {
                 const candidate = row.original;
-                // console.log(candidate)
 
                 return (
-                    <TableCell className="py-3 border-r min-w-[240px]">
+                    <TableCell className="py-3 border-r min-w-[240px] flex items-center gap-2">
+                        <span>
+                            <Checkbox
+                                checked={row.getIsSelected()}
+                                onCheckedChange={(value) => row.toggleSelected(!!value)}
+                                aria-label="Select row"
+                            />
+                        </span>
                         <div className="flex items-center gap-3">
                             <div
                                 className={`h-8 w-8 rounded-full flex items-center justify-center text-sm font-medium`}
@@ -92,6 +86,8 @@ export default function TalentTable({ data }: TalentTableProps) {
                     </TableCell>
                 )
             },
+            enableHiding: false,
+            enableSorting: false,
         },
         {
             accessorKey: "email",
@@ -99,27 +95,13 @@ export default function TalentTable({ data }: TalentTableProps) {
             cell: ({ row }) => {
                 return <TableCell className="py-3 border-r"><span className="text-gray-600">{row.getValue("email")}</span></TableCell>
             },
-            enableSorting: true,
-            enableHiding: false
+            enableHiding: false,
+            enableSorting: false,
         },
         {
             accessorKey: "stage",
-            id: "Stage",
-            header: () => {
-                return (
-                    <div className="flex items-center cursor-pointer" onClick={() => {
-                        setSort(prevSort => {
-                            return {
-                                key: "stage",
-                                value: prevSort.key === "stage" ? prevSort.value === "asc" ? "desc" : "asc" : "desc"
-                            }
-                        })
-                    }}>
-                        <span>Stage</span>
-                        {sort.key === "stage" ? sort.value === "asc" ? <ChevronDown /> : <ChevronUp /> : <ChevronDown />}
-                    </div>
-                )
-            },
+            id: "stage",
+            header: "Stage",
             cell: ({ row }) => {
                 const candidate = row.original
 
@@ -145,18 +127,57 @@ export default function TalentTable({ data }: TalentTableProps) {
                     </TableCell>
                 )
             },
+            enableSorting: true,
+            meta: {
+                type: "string"
+            }
         },
         {
-            accessorKey: "rating",
-            id: "Rating",
-            header: () => {
-                return (
-                    <div className="flex items-center">
-                        <span>Rating</span>
-                        <ChevronDown className="ml-1 h-4 w-4" />
-                    </div>
-                )
+            accessorKey: "rejectionReason",
+            header: "Rejection Reason",
+            cell: ({ row }) => (
+                <TableCell className="py-3 border-r">
+                    {row.original.activeApplication?.rejectedReasons.join(", ")}
+                </TableCell>
+            ),
+            enableSorting: false,
+        },
+        {
+            id: "aiFit",
+            accessorKey: "activeApplication.aiFit",
+            header: "AI Fit Score",
+            cell: ({ row }) => {
+                const score = row.original.activeApplication?.aiFit
+
+                if (!score) {
+                    return <TableCell className="py-3 border-r">
+                        -
+                    </TableCell>
+                }
+
+                return <TableCell className="py-3 border-r">
+                    {
+                        score > 50
+                            ? <Badge variant="destructive">
+                                <ArrowUp></ArrowUp>
+                                {score}%
+                            </Badge>
+                            : <Badge>
+                                <ArrowDown></ArrowDown>
+                                {score}%
+                            </Badge>
+                    }
+                </TableCell>
             },
+            enableSorting: true,
+            meta: {
+                type: "number"
+            }
+        },
+        {
+            id: "avgRating",
+            accessorKey: "rating",
+            header: "Rating",
             cell: ({ row }) => {
                 const rating = row.original.rating;
                 return (
@@ -172,19 +193,23 @@ export default function TalentTable({ data }: TalentTableProps) {
                     </TableCell>
                 )
             },
+            enableSorting: true,
+            meta: {
+                type: "number"
+            }
         },
         {
-            accessorKey: "position",
+            accessorKey: "activeApplication.jobListing.name",
             id: "Applied Job",
             header: "Applied Job",
             cell: ({ row }) => {
-                // const position = row.original.
                 return (
                     <TableCell className="py-3 border-r">
                         {row.original.activeApplication?.jobListing.type === "ACTIVE" && <span className="inline-flex justify-center items-center px-2 py-0.5 border border-[#C3B5FD] bg-[#F5F3FF] text-[#6927DA] rounded-2xl text-xs">{row.original.activeApplication?.jobListing.name}</span>}
                     </TableCell>
                 )
             },
+            enableSorting: false,
         },
         {
             accessorKey: "resume",
@@ -202,18 +227,12 @@ export default function TalentTable({ data }: TalentTableProps) {
                     </TableCell>
                 )
             },
+            enableSorting: false,
         },
         {
+            id: "salaryExp",
             accessorKey: "salary",
-            id: "Salary",
-            header: () => {
-                return (
-                    <div className="flex items-center">
-                        <span>Maaş Beklentisi</span>
-                        <ChevronDown className="ml-1 h-4 w-4" />
-                    </div>
-                )
-            },
+            header: "Salary Exp.",
             cell: ({ row }) => {
                 const salary = row.original.salaryExp
                 return (
@@ -222,18 +241,15 @@ export default function TalentTable({ data }: TalentTableProps) {
                     </TableCell>
                 )
             },
+            enableSorting: true,
+            meta: {
+                type: "number"
+            }
         },
         {
+            id: "phoneNumber",
             accessorKey: "phone",
-            id: "Phone",
-            header: () => {
-                return (
-                    <div className="flex items-center">
-                        <span>Telefon</span>
-                        <ChevronDown className="ml-1 h-4 w-4" />
-                    </div>
-                )
-            },
+            header: "Phone",
             cell: ({ row }) => {
                 const phone = row.original.phoneNumber
                 return (
@@ -242,26 +258,27 @@ export default function TalentTable({ data }: TalentTableProps) {
                     </TableCell>
                 )
             },
+            enableSorting: true,
+            meta: {
+                type: "string"
+            }
         },
         {
-            accessorKey: "lastDate",
-            id: "Last Action",
-            header: () => {
-                return (
-                    <div className="flex items-center">
-                        <span>Son Güncelleme</span>
-                        <ChevronDown className="ml-1 h-4 w-4" />
-                    </div>
-                )
-            },
+            id: "updatedAt",
+            accessorKey: "updatedAt",
+            header: "Last Action",
             cell: ({ row }) => {
-                const lastDate = row.original.lastDate
+                const updatedAt = row.original.updatedAt
                 return (
                     <TableCell className="py-3 border-r">
-                        {lastDate ? <span>{lastDate}</span> : null}
+                        {updatedAt ? <span>{formatDate(updatedAt)}</span> : null}
                     </TableCell>
                 )
             },
+            enableSorting: true,
+            meta: {
+                type: "date"
+            }
         },
         {
             id: "actions",
@@ -275,8 +292,9 @@ export default function TalentTable({ data }: TalentTableProps) {
                     </TableCell>
                 )
             },
+            enableSorting: false,
         },
-    ]
+    ];
 
     const table = useReactTable({
         data: data,
@@ -289,34 +307,86 @@ export default function TalentTable({ data }: TalentTableProps) {
         },
         enableRowSelection: true,
         onRowSelectionChange: setRowSelection,
-        onSortingChange: (val) => {
-            console.log(val)
-        },
+        manualPagination: true,
+        onSortingChange: setSorting,
         getCoreRowModel: getCoreRowModel(),
         getPaginationRowModel: getPaginationRowModel(),
         onColumnVisibilityChange: setColumnVisibility,
         onColumnFiltersChange: setColumnFilters,
         getFilteredRowModel: getFilteredRowModel(),
-        initialState: {
-            pagination: {
-                pageSize: 18
+    });
+
+    useEffect(() => {
+        if (loading || sorting.length === 0) {
+            return
+        }
+        const { id, desc } = sorting[0];
+        sort(id, desc ? "desc" : "asc");
+    }, [sorting]);
+
+    useEffect(() => {
+        if (!elRef.current) {
+            return;
+        }
+
+        function handler(event: any) {
+            if (loading) {
+                return
+            }
+
+            const element = event.currentTarget;
+            if (Math.abs(element.scrollHeight - (element.scrollTop + element.clientHeight)) <= 1) {
+                getNextPage();
             }
         }
-    })
 
-    console.log(table.getState().columnFilters)
+        const element = elRef.current.closest("[data-slot='table-container']");
+        element?.addEventListener("scroll", handler)
+
+        return () => {
+            element?.removeEventListener("scroll", handler)
+        }
+    }, [loading]);
 
     return (
-        <div>
-            <TalentPoolTableFilters table={table} />
-
-            <Table className="mt-6">
+        <>
+            <TalentPoolTableFilters table={table} sorting={sorting} setSorting={setSorting} />
+            <Table ref={elRef}>
                 <TableHeader>
                     <TableRow>
                         {table.getHeaderGroups().map((headerGroup) =>
                             headerGroup.headers.map((header) => (
-                                <TableHead key={header.id} className={`text-gray-700 font-medium h-10 ${!header.id.includes("select") && !header.id.includes("actions") ? "border-r" : ""}`}>
-                                    {header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext())}
+                                <TableHead key={header.id} className="text-gray-700 font-medium h-10">
+                                    <div
+                                        className={
+                                            header.column.getCanSort()
+                                                ? 'cursor-pointer select-none flex items-center justify-between gap-1 text-xs'
+                                                : 'text-xs'
+                                        }
+                                        onClick={() => {
+                                            const nextDirection = header.column.getIsSorted() ? header.column.getIsSorted() === "asc" ? "desc" : "asc" : "asc"
+                                            header.column.toggleSorting(nextDirection === "desc")
+                                        }}
+                                        title={
+                                            header.column.getCanSort()
+                                                ? header.column.getNextSortingOrder() === 'asc'
+                                                    ? 'Sort ascending'
+                                                    : header.column.getNextSortingOrder() === 'desc'
+                                                        ? 'Sort descending'
+                                                        : 'Clear sort'
+                                                : undefined
+                                        }
+                                    >
+                                        {flexRender(
+                                            header.column.columnDef.header,
+                                            header.getContext()
+                                        )}
+                                        {header.column.getCanSort()
+                                            ? !header.column.getIsSorted()
+                                                ? <ArrowDown className="size-3.5" />
+                                                : header.column.getIsSorted() === "asc" ? <ArrowUp className="size-3.5" /> : <ArrowDown className="size-3.5" />
+                                            : null}
+                                    </div>
                                 </TableHead>
                             )),
                         )}
@@ -337,14 +407,12 @@ export default function TalentTable({ data }: TalentTableProps) {
                         })
                     ) : (
                         <TableRow>
-                            <TableCell colSpan={columns.length} className="h-24 text-center">
-                                Not found.
-                            </TableCell>
+                            <TableCell colSpan={columns.length} className="h-24 text-center"></TableCell>
                         </TableRow>
                     )}
                 </TableBody>
             </Table>
-        </div>
+        </ >
     )
 }
 
