@@ -10,7 +10,7 @@ import {
     ColumnFiltersState,
     getFilteredRowModel,
 } from "@tanstack/react-table"
-import { MoreVertical, ChevronDown, Star } from "lucide-react"
+import { MoreVertical, ChevronDown, Star, ChevronUp } from "lucide-react"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "./ui/table"
 import { Checkbox } from "./ui/checkbox"
 import { Button } from "./ui/button"
@@ -19,6 +19,7 @@ import { Applicant } from "../types"
 import TalentPoolTableFilters from "./talent-pool-table-filters"
 import pdfIcon from "../../src/assets/Pdf.png"
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar"
+import { useData } from "./data-provider"
 
 
 const stages = {
@@ -37,8 +38,9 @@ type TalentTableProps = {
 }
 
 export default function TalentTable({ data }: TalentTableProps) {
-    const [sorting, setSorting] = useState<SortingState>([]);
-    const [columnVisibility, setColumnVisibility] = useState({});
+    const { sort, setSort } = useData();
+    const [sorting, setSorting] = useState<SortingState>();
+    const [columnVisibility, setColumnVisibility] = useState({ Phone: false, "Last Action": false });
     const [rowSelection, setRowSelection] = useState({});
     const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([])
 
@@ -71,7 +73,7 @@ export default function TalentTable({ data }: TalentTableProps) {
             enableHiding: false,
             cell: ({ row }) => {
                 const candidate = row.original;
-                console.log(candidate)
+                // console.log(candidate)
 
                 return (
                     <TableCell className="py-3 border-r min-w-[240px]">
@@ -105,9 +107,16 @@ export default function TalentTable({ data }: TalentTableProps) {
             id: "Stage",
             header: () => {
                 return (
-                    <div className="flex items-center">
+                    <div className="flex items-center cursor-pointer" onClick={() => {
+                        setSort(prevSort => {
+                            return {
+                                key: "stage",
+                                value: prevSort.key === "stage" ? prevSort.value === "asc" ? "desc" : "asc" : "desc"
+                            }
+                        })
+                    }}>
                         <span>Stage</span>
-                        <ChevronDown className="ml-1 h-4 w-4" />
+                        {sort.key === "stage" ? sort.value === "asc" ? <ChevronDown /> : <ChevronUp /> : <ChevronDown />}
                     </div>
                 )
             },
@@ -172,7 +181,7 @@ export default function TalentTable({ data }: TalentTableProps) {
                 // const position = row.original.
                 return (
                     <TableCell className="py-3 border-r">
-                        ???
+                        {row.original.activeApplication?.jobListing.type === "ACTIVE" && <span className="inline-flex justify-center items-center px-2 py-0.5 border border-[#C3B5FD] bg-[#F5F3FF] text-[#6927DA] rounded-2xl text-xs">{row.original.activeApplication?.jobListing.name}</span>}
                     </TableCell>
                 )
             },
@@ -280,18 +289,19 @@ export default function TalentTable({ data }: TalentTableProps) {
         },
         enableRowSelection: true,
         onRowSelectionChange: setRowSelection,
-        onSortingChange: setSorting,
+        onSortingChange: (val) => {
+            console.log(val)
+        },
         getCoreRowModel: getCoreRowModel(),
-        getSortedRowModel: getSortedRowModel(),
         getPaginationRowModel: getPaginationRowModel(),
         onColumnVisibilityChange: setColumnVisibility,
         onColumnFiltersChange: setColumnFilters,
-        getFilteredRowModel: getFilteredRowModel(), //client side filtering
+        getFilteredRowModel: getFilteredRowModel(),
         initialState: {
             pagination: {
-                pageSize: 10,
-            },
-        },
+                pageSize: 18
+            }
+        }
     })
 
     console.log(table.getState().columnFilters)
