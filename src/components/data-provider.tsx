@@ -72,7 +72,7 @@ export default function DataProvider({ children }: React.PropsWithChildren<objec
         },
         context: {
             headers: {
-                authorization: "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6ImNsbnZvcTZzYjAwNmQzd21xZHJhNmIxZDIiLCJpYXQiOjE3NDM0OTgzODcsImV4cCI6MTc3NTA1NTk4N30.mtg56U54FxHozIAAfEkP2peFnZIzegV0hwjV2f7L0uk"
+                authorization: `Bearer ${import.meta.env.VITE_JWT_TOKEN}`
             },
         },
     });

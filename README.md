@@ -29,7 +29,17 @@ This project is a talent pool table built using React and TypeScript. It leverag
    npm install
    ```
 
-3. **Run the Development Server**:
+3. **Set Up Environment Variables**:
+
+   Create a `.env` file in the root directory and add the following:
+
+   ```properties
+   VITE_JWT_TOKEN=<your-jwt-token>
+   ```
+
+   Replace `<your-jwt-token>` with the actual JWT token.
+
+4. **Run the Development Server**:
 
    ```bash
    npm run dev
