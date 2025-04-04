@@ -42,7 +42,7 @@ const bottomMenuItems = [
 
 export function AppSidebar() {
     return (
-        <Sidebar>
+        <Sidebar className="border-0!">
             <SidebarHeader className="px-6 pt-8">
                 <div className="flex items-center justify-between px-3.5 py-2.5 border border-[#EAECF0] rounded-[8px]">
                     <div className="flex items-center gap-1.5">
@@ -61,7 +61,7 @@ export function AppSidebar() {
                             {topMenuItems.map((item) => {
                                 return (
                                     <SidebarMenuItem key={item.title}>
-                                        <SidebarMenuButton asChild className="-mx-2 w-full [&>svg]:size-6 text-base font-medium h-10 gap-3">
+                                        <SidebarMenuButton asChild className="w-full [&>svg]:size-6 text-base font-medium h-10 gap-3 text-[#344054]">
                                             <a href={item.url}>
                                                 <item.icon />
                                                 <span>{item.title}</span>
@@ -75,13 +75,13 @@ export function AppSidebar() {
                 </SidebarGroup>
 
 
-                <SidebarGroup className="px-6 pt-0 mt-auto">
+                <SidebarGroup className="px-6 py-4 pt-0 mt-auto">
                     <SidebarGroupContent>
                         <SidebarMenu>
                             {bottomMenuItems.map((item) => {
                                 return (
                                     <SidebarMenuItem key={item.title}>
-                                        <SidebarMenuButton asChild className="-mx-2 [&>svg]:size-6 text-base font-medium h-10 gap-3">
+                                        <SidebarMenuButton asChild className="-mx-2 w-full [&>svg]:size-6 text-base font-medium h-10 gap-3 text-[#344054]">
                                             <a href={item.url}>
                                                 <item.icon />
                                                 <span>{item.title}</span>
@@ -95,9 +95,9 @@ export function AppSidebar() {
                 </SidebarGroup>
             </SidebarContent>
 
-            <span className="m-6 block h-[1px] bg-gray-200"></span>
+            <span className="block h-[1px] bg-gray-200"></span>
 
-            <SidebarFooter className="px-6">
+            <SidebarFooter className="p-6">
                 <div className="flex items-center justify-between">
                     <img src={avatarImage} alt="" className="size-10 rounded-full shrink-0" />
                     <div className="flex flex-col gap-1">

@@ -9,6 +9,7 @@ import { Label } from "./ui/label"
 import { Switch } from "./ui/switch"
 import { useData } from "./data-provider"
 import { useEffect, useState } from "react"
+import { ColumnsIcon, FlashIcon, SearchIcon, SheetsIcon, SortIcon } from "./svgs"
 
 type TalentPoolTableFiltersProps = {
     table: Table<Applicant>,
@@ -38,7 +39,7 @@ export default function TalentPoolTableFilters({ table, setSorting }: TalentPool
     const currentSortingColumn = table.getFlatHeaders().find(header => {
         return header.column.columnDef.id === sorters[0].id
     });
-    const lowHighTexts = sortingTextsByType[currentSortingColumn?.column.columnDef.meta.type || "string"];
+    const lowHighTexts = sortingTextsByType[currentSortingColumn?.column?.columnDef?.meta?.type || "string"];
 
     useEffect(() => {
         const timeoutId = setTimeout(() => {
@@ -52,21 +53,21 @@ export default function TalentPoolTableFilters({ table, setSorting }: TalentPool
 
 
     return (
-        <div className="flex gap-3 justify-end flex-wrap">
-            <div>
+        <div className="grid px-8 grid-cols-2 gap-2 sm:grid-cols-3  md:flex md:gap-3 md:justify-end md:flex-wrap">
+            <div className="col-span-2 sm:col-span-3">
                 <form>
                     <div className="relative">
-                        <Input type="text" placeholder="Search" className="pl-10 w-[140px] h-8" value={query} onChange={event => setQuery(event.target.value)} />
-                        <Search className="size-5 absolute top-1/2 left-3.5 -translate-y-1/2" />
+                        <Input type="text" placeholder="Search" className="pl-10 w-full md:w-[140px] h-8 text-sm placeholder:text-[#667085]" value={query} onChange={event => setQuery(event.target.value)} />
+                        <SearchIcon className="size-5 absolute top-1/2 left-3.5 -translate-y-1/2 text-[2px]" />
                     </div>
                 </form>
             </div>
 
-            <div>
+            <div className="col-span-1">
                 <Popover>
                     <PopoverTrigger asChild>
-                        <Button className="h-8 px-4! py-1 bg-transparent! shadow-none! text-gray-900 border border-gray-300 text-xs">
-                            <SortAscIcon />
+                        <Button className="w-full md:w-auto h-8 px-4! py-1 bg-transparent! shadow-none! text-gray-900! border border-gray-300 text-xs">
+                            <SortIcon />
                             <span>Sort</span>
                         </Button>
                     </PopoverTrigger>
@@ -90,7 +91,7 @@ export default function TalentPoolTableFilters({ table, setSorting }: TalentPool
                                             .filter(header => header.column.columnDef.enableSorting !== false)
                                             .map(header => (
                                                 <SelectItem value={header.column.columnDef.id?.toString() ?? ""} data-id={header.column.columnDef.id?.toString()}>
-                                                    {header.column.columnDef.header?.toString()} {header.column.columnDef.id?.toString()}
+                                                    {header.column.columnDef.header?.toString()}
                                                 </SelectItem>
                                             ))
                                     ))}
@@ -123,11 +124,11 @@ export default function TalentPoolTableFilters({ table, setSorting }: TalentPool
                 </Popover>
             </div>
 
-            <div>
+            <div className="col-span-1">
                 <Popover>
                     <PopoverTrigger asChild>
-                        <Button className="h-8 px-4! py-1 bg-transparent! shadow-none! text-gray-900 border border-gray-300 text-xs">
-                            <AlignEndHorizontal />
+                        <Button className="w-full md:w-auto h-8 px-4! py-1 bg-transparent! shadow-none! text-gray-900! border border-gray-300 text-xs">
+                            <ColumnsIcon className="size-5" />
                             <span>Columns</span>
                             <ChevronDown />
 
@@ -138,8 +139,9 @@ export default function TalentPoolTableFilters({ table, setSorting }: TalentPool
                             {table.getAllColumns().filter((column) => !["select", "actions"].includes(column.id))
                                 .map((column) => {
                                     return (
-                                        <div className="flex items-center" key={column.id}>
-                                            <Label htmlFor={column.id} className={!column.getCanHide() ? "text-g" : ""}>
+                                        <div className="flex items-center gap-2" key={column.id}>
+                                            <FlashIcon />
+                                            <Label htmlFor={column.id} className="text-[#344054]">
                                                 {typeof column.columnDef.header === "function" ? column.columnDef.id : column.columnDef.header}
                                             </Label>
                                             <Switch
@@ -157,23 +159,23 @@ export default function TalentPoolTableFilters({ table, setSorting }: TalentPool
                 </Popover>
             </div>
 
-            <div>
-                <Select value="dark">
-                    <SelectTrigger className="h-8! w-auto!">
+            <div className="col-span-1">
+                <Select value="sheet">
+                    <SelectTrigger className="h-8! w-full! md:w-auto! font-medium text-gray-900! text-xs [&>svg]:size-4.5 [&>svg]:text-gray-900 [&>svg]:opacity-1">
                         <div className="flex items-center gap-2">
-                            <Columns className="size-[15px]" />
-                            <SelectValue placeholder=""></SelectValue>
+                            <SheetsIcon className="size-5" />
+                            <SelectValue placeholder="Sheet View"></SelectValue>
                         </div>
                     </SelectTrigger>
                     <SelectContent>
-                        <SelectItem value="light">Light</SelectItem>
-                        <SelectItem value="dark">Dark</SelectItem>
-                        <SelectItem value="system">System</SelectItem>
+                        <SelectItem value="sheet">Sheet View</SelectItem>
+                        <SelectItem value="list">List View</SelectItem>
+                        <SelectItem value="kanban">Kanban View</SelectItem>
                     </SelectContent>
                 </Select>
             </div>
 
-            <div>
+            <div className="col-span-1">
                 <Button className="h-8 bg-transparent p-2 hover:bg-transparent shadow-none text-gray-900">
                     <Ellipsis />
                 </Button>

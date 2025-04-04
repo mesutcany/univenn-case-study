@@ -8,6 +8,7 @@ function App() {
   return (
     <SidebarProvider
       style={{
+        "--sidebar": "#fff",
         "--sidebar-width": "290px",
       } as React.CSSProperties}
       className="block"

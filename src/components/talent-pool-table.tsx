@@ -47,7 +47,7 @@ export default function TalentTable({ data }: TalentTableProps) {
 
     const columns: ColumnDef<Applicant>[] = [
         {
-            id: "fullName",
+            id: "Name",
             accessorFn: (row) => row.firstName + " " + row.lastName,
             header: ({ table }) => (
                 <div className="flex items-center gap-2">
@@ -56,7 +56,7 @@ export default function TalentTable({ data }: TalentTableProps) {
                         onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
                         aria-label="Select all"
                     />
-                    <span>Name</span>
+                    <span className="text-xs">Name</span>
                 </div>
             ),
             cell: ({ row }) => {
@@ -93,7 +93,7 @@ export default function TalentTable({ data }: TalentTableProps) {
             accessorKey: "email",
             header: "Email",
             cell: ({ row }) => {
-                return <TableCell className="py-3 border-r"><span className="text-gray-600">{row.getValue("email")}</span></TableCell>
+                return <TableCell className="py-3 border-r"><span className="text-gray-600 text-xs">{row.getValue("email")}</span></TableCell>
             },
             enableHiding: false,
             enableSorting: false,
@@ -109,7 +109,7 @@ export default function TalentTable({ data }: TalentTableProps) {
                     <TableCell className="border-r p-0!">
                         <div className="gap-2 h-full w-full">
                             <Select defaultValue={candidate.activeApplication?.stage.name}>
-                                <SelectTrigger value={candidate.activeApplication?.stage.name} className="flex items-center gap-2 h-full! w-full!">
+                                <SelectTrigger value={candidate.activeApplication?.stage.name} className="flex items-center gap-2 h-full! w-full! border-0 shadow-none focus-visible:outline-0! text-sm cursor-pointer">
                                     <SelectValue placeholder="Stage"></SelectValue>
                                 </SelectTrigger>
                                 <SelectContent>
@@ -278,6 +278,60 @@ export default function TalentTable({ data }: TalentTableProps) {
             enableSorting: true,
             meta: {
                 type: "date"
+            }
+        },
+        {
+            id: "dateOfBirth",
+            header: "Age",
+            accessorKey: "age",
+            cell: ({ row }) => {
+                return (
+                    <TableCell className="py-3 border-r">
+                        <div className="flex items-center justify-center">
+                            {row.original.age ?? ""}
+                        </div>
+                    </TableCell>
+                )
+            },
+            enableSorting: true,
+            meta: {
+                type: "number"
+            }
+        },
+        {
+            id: "gender",
+            header: "Gender",
+            accessorKey: "gender",
+            cell: ({ row }) => {
+                return (
+                    <TableCell className="py-3 border-r">
+                        <div className="flex items-center justify-center">
+                            {row.original.gender ?? ""}
+                        </div>
+                    </TableCell>
+                )
+            },
+            enableSorting: true,
+            meta: {
+                type: "string"
+            }
+        },
+        {
+            id: "gradUni",
+            header: "Graduated Uni.",
+            accessorKey: "gradUni",
+            cell: ({ row }) => {
+                return (
+                    <TableCell className="py-3 border-r">
+                        <div className="flex items-center justify-center">
+                            {row.original.gradUni ?? ""}
+                        </div>
+                    </TableCell>
+                )
+            },
+            enableSorting: true,
+            meta: {
+                type: "string"
             }
         },
         {
